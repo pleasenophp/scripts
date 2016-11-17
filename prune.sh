@@ -1,6 +1,7 @@
-#!/bin/sh
+#!/bin/bash
 
-# Supported arguments: <folder path> <days for daily prune> <days for monthly prune
+# Supported arguments: <folder path> <days for daily prune> <days for monthly prunei> <filter> [--test]
+# filter is part of file name that must be present, e.g. take only file names that contain "build" word
 # e.g. "prune.sh Builds 3 30" will for all folders/files that are older than 3 days keep only one last per day, and for all files that are older than 30 days keep only one last per month.
 # Pass the last argument "--test" if you wish to only run it in test mode but not actually delete
 
@@ -8,12 +9,31 @@
 # and the text-prefix is the same for all the files in the folder.
 
 # The subfolders are supported as well
-#
+
 
 FOLDER_NAME=$1
 D_DAYS=$2
 M_DAYS=$3
-TEST=$4
+FILTER=$4
+TEST=$5
+
+# D_DAYS=$((D_DAYS+0))
+# M_DAYS=$((M_DAYS+0))
+
+function getDateFromName {
+	if [[ "$OSTYPE" == "linux-gnu" ]]; then
+		# Linux
+		echo $1 | grep -o -P '\d{4}-\d{2}-\d{2}'
+	elif [[ "$OSTYPE" == "darwin"* ]]; then
+		# OSX
+		echo $1 | egrep -o '\d{4}-\d{2}-\d{2}'
+	elif [[ "$OSTYPE" == "cygwin" ]]; then
+		# POSIX compatibility layer and Linux environment emulation for Windows
+		echo $1 | grep -o -P '\d{4}-\d{2}-\d{2}'
+	else
+		echo "OS $OSTYPE is not supported! Try cygwin if you are on Windows."; exit 1;
+	fi
+}
 
 function getDayDiff {
 	echo `ruby -rdate -e "puts Date.parse('$1').mjd - Date.parse('$2').mjd"`
@@ -45,12 +65,12 @@ fi
 
 echo "Will prune folder $FOLDER_NAME by keeping only 1 last entry per day for all the entries older than $D_DAYS days and 1 last entry per month for all the entries older than $M_DAYS days"
 
-# Taking all the files that contain some word (in this case install)
-# FILES=($(ls $FOLDER_NAME | sort | grep install))
-
-# Taking all the files/folders from folder sorted by name (because the date is in the name)
-FILES=($(ls $FOLDER_NAME | sort))
-
+# Taking all the files that contain install (not taking features)
+if [ -z $FILTER ]; then
+	FILES=($(ls $FOLDER_NAME | sort))
+else
+	FILES=($(ls $FOLDER_NAME | sort | grep $FILTER))
+fi
 
 SNOW=$(date +%Y-%m-%d)
 PREV_FILE=''
@@ -58,7 +78,7 @@ PREV_DATE=''
 
 for i in ${!FILES[@]}; do
 	FNAME=${FILES[$i]}
-	SDATE=`echo $FNAME | egrep -o '\d{4}-\d{2}-\d{2}'`
+	SDATE=$(getDateFromName $FNAME)
 	SDIFF=$(getDayDiff $SNOW $SDATE)
 
 	if [ ! -z $PREV_FILE ]; then 
