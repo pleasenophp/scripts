@@ -17,9 +17,6 @@ M_DAYS=$3
 FILTER=$4
 TEST=$5
 
-# D_DAYS=$((D_DAYS+0))
-# M_DAYS=$((M_DAYS+0))
-
 function getDateFromName {
 	if [[ "$OSTYPE" == "linux-gnu" ]]; then
 		# Linux
