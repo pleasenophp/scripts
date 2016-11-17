@@ -4,6 +4,11 @@
 # e.g. "prune.sh Builds 3 30" will for all folders/files that are older than 3 days keep only one last per day, and for all files that are older than 30 days keep only one last per month.
 # Pass the last argument "--test" if you wish to only run it in test mode but not actually delete
 
+# The script assumes that the files/folders are named in format "<text-prefix>yyyy-mm-dd<text-postfix>" where text-prefix and text-postfix can be any text, just not starting with digits, 
+# and the text-prefix is the same for all the files in the folder.
+
+# The subfolders are supported as well
+#
 
 FOLDER_NAME=$1
 D_DAYS=$2
@@ -40,8 +45,12 @@ fi
 
 echo "Will prune folder $FOLDER_NAME by keeping only 1 last entry per day for all the entries older than $D_DAYS days and 1 last entry per month for all the entries older than $M_DAYS days"
 
-# Taking all the files that contain install (not taking features)
-FILES=($(ls $FOLDER_NAME | sort | grep install))
+# Taking all the files that contain some word (in this case install)
+# FILES=($(ls $FOLDER_NAME | sort | grep install))
+
+# Taking all the files/folders from folder sorted by name (because the date is in the name)
+FILES=($(ls $FOLDER_NAME | sort))
+
 
 SNOW=$(date +%Y-%m-%d)
 PREV_FILE=''
